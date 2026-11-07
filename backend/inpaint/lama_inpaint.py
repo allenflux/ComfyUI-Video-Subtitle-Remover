@@ -1,12 +1,9 @@
-import os
 import copy
 from typing import Union, List
 import torch
 import numpy as np
 from PIL import Image
-from backend.inpaint.utils.lama_util import prepare_img_and_mask
-from backend import config
-from backend.tools.inpaint_tools import get_inpaint_area_by_mask
+from .utils.lama_util import prepare_img_and_mask
 
 class LamaInpaint:
     def __init__(self, device: torch.device = torch.device("cuda" if torch.cuda.is_available() else "cpu"), model_path='big-lama.pt') -> None:
@@ -32,6 +29,8 @@ class LamaInpaint:
         :param input_frames: 原视频帧
         :param input_mask: 字幕区域mask
         """
+        from ..tools.inpaint_tools import get_inpaint_area_by_mask
+
         mask = input_mask[:, :, None]
         H_ori, W_ori = mask.shape[:2]
         H_ori = int(H_ori + 0.5)

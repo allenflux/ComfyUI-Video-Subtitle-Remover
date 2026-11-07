@@ -15,6 +15,33 @@ Video-subtitle-remover (VSR) 是一款基于AI技术，将视频中的硬字幕�
 - 支持全视频自动去除所有文本（不传入位置）
 - 支持多选图片批量去除水印文本
 
+## 在 ComfyUI 中使用
+
+1. 在 `ComfyUI/custom_nodes` 中运行下列命令，或将整个项目目录复制为 `ComfyUI/custom_nodes/video-subtitle-remover`。保留 `backend/models` 目录。
+
+   ```sh
+   git clone --depth 1 https://github.com/allenflux/ComfyUI-Video-Subtitle-Remover.git video-subtitle-remover
+   ```
+
+2. 用启动 ComfyUI 的同一个 Python 安装依赖。在项目目录运行以下命令。Windows 便携版请把 `python` 换成便携版目录下的 `python_embeded/python.exe` 的完整路径。
+
+   ```sh
+   python -m pip install -r requirements-comfyui.txt
+   ```
+
+3. 重启 ComfyUI，在节点搜索中输入 `VSR Remove Subtitles` 或 `VSR Remove Watermark`。模型随项目提供。
+
+| 节点 | 用法 |
+| --- | --- |
+| `VSR Remove Subtitles` | 接收视频帧。默认在画面底部四分之一自动检测硬字幕，输出修复帧和字幕遮罩。可调整检测范围，或切换到 `rectangle` 修复整块选区。 |
+| `VSR Remove Watermark` | 接收单张图像或一批视频帧。用矩形框选固定水印，或连接 `MASK` 指定修复位置。遮罩尺寸应与画面一致，可为所有帧共用一张，也可逐帧提供。连接遮罩后优先使用遮罩。 |
+
+`x`、`y` 从左上角开始，和 `width`、`height` 一样按画面宽高的比例填写。选区的起点须位于画面内，宽高须大于 0。自动检测的 `padding` 以像素为单位，用于扩大字幕遮罩。
+
+两个节点均可选择 `LaMa` 逐帧修复、`STTN` 利用相邻帧修复，或使用 `OpenCV` 快速处理小范围。首次使用 `LaMa` 时会在 `backend/models/big-lama` 合并随项目提供的模型分片，该目录需要可写。
+
+将[视频清理工作流](workflows/video_cleanup.json)拖入 ComfyUI。将 `Load Video` 中的占位文件名 `test.mp4` 换成你上传的视频。工作流默认启用去字幕，去水印节点处于旁路状态。需要去水印时，取消旁路并调整选区。视频使用 `Get Video Components` 拆帧，`Create Video` 接回原音频和帧率，`Save Video` 保存结果。处理单张图像时可用 `Load Image → VSR Remove Watermark → Save Image`。视频工作流会把视频帧载入内存，建议先用短片确认选区和效果。
+
 ![demo.png](design/demo.png)
 
 **使用说明：**

@@ -5,8 +5,7 @@ import math
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import torchvision.models as models
-from backend.inpaint.utils.spectral_norm import spectral_norm as _spectral_norm
+from ..utils.spectral_norm import spectral_norm as _spectral_norm
 
 
 class BaseNetwork(nn.Module):

@@ -1,28 +1,14 @@
 import copy
-import time
 
 import cv2
 import numpy as np
 import torch
-from torchvision import transforms
 from typing import List
-import sys
-import os
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-from backend.config import config
-from backend.inpaint.sttn.network_sttn import InpaintGenerator
-from backend.inpaint.utils.sttn_utils import Stack, ToTorchFormatTensor
-from backend.tools.inpaint_tools import get_inpaint_area_by_mask
 
-# 定义图像预处理方式
-_to_tensors = transforms.Compose([
-    Stack(),  # 将图像堆叠为序列
-    ToTorchFormatTensor()  # 将堆叠的图像转化为PyTorch张量
-])
+from .sttn.network_sttn import InpaintGenerator
 
 class STTNDetInpaint:
-    def __init__(self, device, model_path):
+    def __init__(self, device, model_path, *, neighbor_stride=None, ref_length=None):
         self.device = device
         # 1. 创建InpaintGenerator模型实例并装载到选择的设备上
         self.model = InpaintGenerator().to(self.device)
@@ -33,14 +19,23 @@ class STTNDetInpaint:
         # 模型输入用的宽和高
         self.model_input_width, self.model_input_height = 432, 240
         # 2. 设置相连帧数
-        self.neighbor_stride = config.sttnNeighborStride.value
-        self.ref_length = config.sttnReferenceLength.value
+        if neighbor_stride is None or ref_length is None:
+            from ..config import config
+
+            if neighbor_stride is None:
+                neighbor_stride = config.sttnNeighborStride.value
+            if ref_length is None:
+                ref_length = config.sttnReferenceLength.value
+        self.neighbor_stride = neighbor_stride
+        self.ref_length = ref_length
 
     def __call__(self, input_frames: List[np.ndarray], input_mask: np.ndarray):
         """
         :param input_frames: 原视频帧
         :param mask: 字幕区域mask
         """
+        from ..tools.inpaint_tools import get_inpaint_area_by_mask
+
         mask = input_mask[:, :, None]
         H_ori, W_ori = mask.shape[:2]
         H_ori = int(H_ori + 0.5)
@@ -126,11 +121,13 @@ class STTNDetInpaint:
         """
         frame_length = len(frames)
         # 对帧进行预处理转换为张量，并进行归一化
-        feats = _to_tensors(frames).unsqueeze(0) * 2 - 1
-        
-        binary_masks = [np.expand_dims((np.array(m) > 0.5).astype(np.uint8), 2) for m in masks]
-        # 将掩码转换为张量
-        masks = (_to_tensors(masks).unsqueeze(0) > 0.5).float()
+        rgb_frames = np.stack([cv2.cvtColor(frame, cv2.COLOR_BGR2RGB) for frame in frames])
+        feats = torch.from_numpy(rgb_frames).permute(0, 3, 1, 2).contiguous()
+        feats = feats.float().unsqueeze(0).div(255).mul(2).sub(1)
+
+        mask_array = np.stack(masks)
+        binary_masks = (mask_array > 0.5).astype(np.uint8)[..., None]
+        masks = torch.from_numpy(mask_array > 127).float()[None, :, None]
         
         # 把特征张量转移到指定的设备（CPU或GPU）
         feats, masks = feats.to(self.device), masks.to(self.device)
@@ -168,7 +165,7 @@ class STTNDetInpaint:
                     idx = neighbor_ids[i]
                     # 将预测的图片转换为无符号8位整数格式
                     img = np.array(pred_img[i]).astype(
-                        np.uint8)*binary_masks[idx] + frames[idx] * (1-binary_masks[idx])
+                        np.uint8)*binary_masks[idx] + rgb_frames[idx] * (1-binary_masks[idx])
                     if comp_frames[idx] is None:
                         # 如果该位置为空，则赋值为新计算出的图片
                         comp_frames[idx] = img

@@ -15,6 +15,33 @@ Video-subtitle-remover (VSR) is an AI-based software that removes hardcoded subt
 - Supports automatic removal of all text throughout the entire video (without inputting a position).
 - Supports multi-selection of images for batch removal of watermark text.
 
+## Use with ComfyUI
+
+1. Run the command below from `ComfyUI/custom_nodes`, or copy this entire project directory to `ComfyUI/custom_nodes/video-subtitle-remover`, including `backend/models`.
+
+   ```sh
+   git clone --depth 1 https://github.com/allenflux/ComfyUI-Video-Subtitle-Remover.git video-subtitle-remover
+   ```
+
+2. From the project directory, install the dependencies with the Python interpreter that runs ComfyUI. On Windows Portable, replace `python` with the full path to `python_embeded/python.exe` in your portable installation.
+
+   ```sh
+   python -m pip install -r requirements-comfyui.txt
+   ```
+
+3. Restart ComfyUI and search for `VSR Remove Subtitles` or `VSR Remove Watermark`. The model weights are included in the project.
+
+| Node | Usage |
+| --- | --- |
+| `VSR Remove Subtitles` | Takes video frames and automatically detects hardcoded subtitles in the bottom quarter by default. It returns the restored frames and a subtitle mask. Adjust the search area or select `rectangle` to restore the entire selection. |
+| `VSR Remove Watermark` | Takes a single image or a batch of video frames. Position a rectangle over a fixed watermark or connect a `MASK` to select the area. A connected mask takes precedence over the rectangle and must match the frame dimensions. Supply one shared mask or one per frame. |
+
+`x` and `y` start at the upper-left corner. Both coordinates and `width` and `height` are proportions of the frame dimensions. Start the rectangle inside the frame and give it a positive width and height. In auto mode, `padding` expands the subtitle mask by the specified number of pixels.
+
+Both nodes offer `LaMa` for per-frame inpainting, `STTN` for inpainting with neighboring frames, and `OpenCV` for quick cleanup of small areas. On first use, `LaMa` assembles the bundled model parts in `backend/models/big-lama`, which needs to be writable.
+
+Drag the [video cleanup workflow](workflows/video_cleanup.json) into ComfyUI. Replace the placeholder `test.mp4` in `Load Video` with your uploaded clip. The workflow runs subtitle removal with the watermark node bypassed. To remove a watermark, disable bypass and adjust its region. `Get Video Components` separates the frames, `Create Video` receives the source audio and frame rate, and `Save Video` saves the result. For a single image, use `Load Image → VSR Remove Watermark → Save Image`. The video workflow loads the frames into memory, so start with a short clip to check the region and result.
+
 ![demo.png](design/demo.png)
 
 > Download the .zip package directly, extract, and run it. If it cannot run, follow the tutorial below to try installing the conda environment and running the source code.

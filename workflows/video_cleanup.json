@@ -1,0 +1,127 @@
+{
+  "last_node_id": 6,
+  "last_link_id": 7,
+  "nodes": [
+    {
+      "id": 1,
+      "type": "LoadVideo",
+      "pos": [40, 120],
+      "size": [280, 120],
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {"name": "VIDEO", "type": "VIDEO", "links": [1]}
+      ],
+      "properties": {"Node name for S&R": "LoadVideo"},
+      "widgets_values": ["test.mp4", "image"]
+    },
+    {
+      "id": 2,
+      "type": "GetVideoComponents",
+      "pos": [370, 120],
+      "size": [250, 120],
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "inputs": [
+        {"name": "video", "type": "VIDEO", "link": 1}
+      ],
+      "outputs": [
+        {"name": "images", "type": "IMAGE", "links": [2]},
+        {"name": "audio", "type": "AUDIO", "links": [3]},
+        {"name": "fps", "type": "FLOAT", "links": [4]},
+        {"name": "bit_depth", "type": "COMBO", "links": null},
+        {"name": "color_space", "type": "COMBO", "links": null}
+      ],
+      "properties": {"Node name for S&R": "GetVideoComponents"},
+      "widgets_values": []
+    },
+    {
+      "id": 3,
+      "type": "VSRRemoveSubtitles",
+      "pos": [690, 40],
+      "size": [260, 244],
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "inputs": [
+        {"name": "images", "type": "IMAGE", "link": 2}
+      ],
+      "outputs": [
+        {"name": "images", "type": "IMAGE", "links": [5]},
+        {"name": "mask", "type": "MASK", "links": null}
+      ],
+      "properties": {"Node name for S&R": "VSRRemoveSubtitles"},
+      "widgets_values": ["LaMa", "auto", 0.0, 0.75, 1.0, 0.25, 8]
+    },
+    {
+      "id": 4,
+      "type": "VSRRemoveWatermark",
+      "pos": [1010, 40],
+      "size": [265, 204],
+      "flags": {},
+      "order": 3,
+      "mode": 4,
+      "inputs": [
+        {"name": "images", "type": "IMAGE", "link": 5},
+        {"name": "mask", "type": "MASK", "shape": 7, "link": null}
+      ],
+      "outputs": [
+        {"name": "images", "type": "IMAGE", "links": [6]}
+      ],
+      "properties": {"Node name for S&R": "VSRRemoveWatermark"},
+      "widgets_values": ["LaMa", 0.8, 0.0, 0.2, 0.2]
+    },
+    {
+      "id": 5,
+      "type": "CreateVideo",
+      "pos": [1340, 120],
+      "size": [250, 144],
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "inputs": [
+        {"name": "images", "type": "IMAGE", "link": 6},
+        {"name": "audio", "type": "AUDIO", "shape": 7, "link": 3},
+        {"name": "fps", "type": "FLOAT", "widget": {"name": "fps"}, "link": 4}
+      ],
+      "outputs": [
+        {"name": "VIDEO", "type": "VIDEO", "links": [7]}
+      ],
+      "properties": {"Node name for S&R": "CreateVideo"},
+      "widgets_values": [25]
+    },
+    {
+      "id": 6,
+      "type": "SaveVideo",
+      "pos": [1650, 120],
+      "size": [360, 345],
+      "flags": {},
+      "order": 5,
+      "mode": 0,
+      "inputs": [
+        {"name": "video", "type": "VIDEO", "link": 7}
+      ],
+      "outputs": [
+        {"name": "video", "type": "VIDEO", "links": null}
+      ],
+      "properties": {"Node name for S&R": "SaveVideo"},
+      "widgets_values": ["video/VSR_cleanup", "auto", "auto"]
+    }
+  ],
+  "links": [
+    [1, 1, 0, 2, 0, "VIDEO"],
+    [2, 2, 0, 3, 0, "IMAGE"],
+    [3, 2, 1, 5, 1, "AUDIO"],
+    [4, 2, 2, 5, 2, "FLOAT"],
+    [5, 3, 0, 4, 0, "IMAGE"],
+    [6, 4, 0, 5, 0, "IMAGE"],
+    [7, 5, 0, 6, 0, "VIDEO"]
+  ],
+  "groups": [],
+  "config": {},
+  "extra": {"ds": {"scale": 0.62, "offset": [20, 95]}},
+  "version": 0.4
+}

@@ -1,10 +1,13 @@
 
 import os
+import warnings
 from pathlib import Path
 from qfluentwidgets import (qconfig, ConfigItem, QConfig, OptionsValidator, BoolValidator, OptionsConfigItem, 
                             EnumSerializer, RangeValidator, RangeConfigItem, ConfigValidator)
 from backend.tools.constant import InpaintMode, SubtitleDetectMode
 import configparser
+
+warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 # 项目版本号
 VERSION = "1.4.0"
