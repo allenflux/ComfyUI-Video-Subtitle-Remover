@@ -54,7 +54,7 @@ def _load_inpainter(method):
         from .backend.inpaint.sttn_det_inpaint import STTNDetInpaint
 
         path = MODELS / "sttn-det" / "sttn.pth"
-        return STTNDetInpaint(device, path, neighbor_stride=5, ref_length=10)
+        return STTNDetInpaint(device, path)
     raise ValueError(f"Unknown VSR inpainting method: {method}")
 
 

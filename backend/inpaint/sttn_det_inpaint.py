@@ -1,5 +1,3 @@
-import copy
-
 import cv2
 import numpy as np
 import torch
@@ -7,8 +5,9 @@ from typing import List
 
 from .sttn.network_sttn import InpaintGenerator
 
+
 class STTNDetInpaint:
-    def __init__(self, device, model_path, *, neighbor_stride=None, ref_length=None):
+    def __init__(self, device, model_path, *, neighbor_stride=5, ref_length=10):
         self.device = device
         # 1. 创建InpaintGenerator模型实例并装载到选择的设备上
         self.model = InpaintGenerator().to(self.device)
@@ -19,86 +18,8 @@ class STTNDetInpaint:
         # 模型输入用的宽和高
         self.model_input_width, self.model_input_height = 432, 240
         # 2. 设置相连帧数
-        if neighbor_stride is None or ref_length is None:
-            from ..config import config
-
-            if neighbor_stride is None:
-                neighbor_stride = config.sttnNeighborStride.value
-            if ref_length is None:
-                ref_length = config.sttnReferenceLength.value
         self.neighbor_stride = neighbor_stride
         self.ref_length = ref_length
-
-    def __call__(self, input_frames: List[np.ndarray], input_mask: np.ndarray):
-        """
-        :param input_frames: 原视频帧
-        :param mask: 字幕区域mask
-        """
-        from ..tools.inpaint_tools import get_inpaint_area_by_mask
-
-        mask = input_mask[:, :, None]
-        H_ori, W_ori = mask.shape[:2]
-        H_ori = int(H_ori + 0.5)
-        W_ori = int(W_ori + 0.5)
-        # 确定去字幕的垂直高度部分
-        if H_ori > W_ori:
-            split_h = int(H_ori * 5 / 9)
-        else:
-            split_h = int(W_ori * 5 / 18)
-        inpaint_area = get_inpaint_area_by_mask(W_ori, H_ori, split_h, mask)
-        # 初始化帧存储变量
-        # 高分辨率帧存储列表
-        frames_hr = copy.deepcopy(input_frames)
-        frames_scaled = {}  # 存放缩放后帧的字典
-        masks_scaled = {}  # 存放缩放后遮罩的字典
-        comps = {}  # 存放补全后帧的字典
-        # 存储最终的视频帧
-        inpainted_frames = []
-        for k in range(len(inpaint_area)):
-            frames_scaled[k] = []  # 为每个去除部分初始化一个列表
-            masks_scaled[k] = []  # 为每个去除部分初始化一个列表
-
-        # 读取并缩放帧
-        for j in range(len(frames_hr)):
-            image = frames_hr[j]
-            # 对每个去除部分进行切割和缩放
-            for k in range(len(inpaint_area)):
-                image_crop = image[inpaint_area[k][0]:inpaint_area[k][1], :, :]  # 切割
-                mask_crop = mask[inpaint_area[k][0]:inpaint_area[k][1], :, :]  # 切割
-                image_resize = cv2.resize(image_crop, (self.model_input_width, self.model_input_height))  # 缩放
-                mask_resize = cv2.resize(mask_crop, (self.model_input_width, self.model_input_height))  # 缩放
-                frames_scaled[k].append(image_resize)  # 将缩放后的帧添加到对应列表
-                masks_scaled[k].append(mask_resize)  # 将缩放后的遮罩添加到对应列表
-
-        # 处理每一个去除部分
-        for k in range(len(inpaint_area)):
-            # 调用inpaint函数进行处理
-            comps[k] = self.inpaint(frames_scaled[k], masks_scaled[k])
-
-        # 如果存在去除部分
-        if inpaint_area:
-            for j in range(len(frames_hr)):
-                frame = frames_hr[j]  # 取出原始帧
-                # 对于模式中的每一个段落
-                for k in range(len(inpaint_area)):
-                    comp = cv2.resize(comps[k][j], (W_ori, split_h))  # 将补全帧缩放回原大小
-                    comp = cv2.cvtColor(np.array(comp).astype(np.uint8), cv2.COLOR_BGR2RGB)  # 转换颜色空间
-                    # 获取遮罩区域并进行图像合成
-                    mask_area = mask[inpaint_area[k][0]:inpaint_area[k][1], :]  # 取出遮罩区域
-                    # 实现遮罩区域内的图像融合
-                    frame[inpaint_area[k][0]:inpaint_area[k][1], :, :] = comp
-                # 将最终帧添加到列表
-                inpainted_frames.append(frame)
-                # print(f'processing frame, {len(frames_hr) - j} left')
-        return inpainted_frames
-
-    @staticmethod
-    def read_mask(path):
-        img = cv2.imread(path, 0)
-        # 转为binary mask
-        ret, img = cv2.threshold(img, 127, 1, cv2.THRESH_BINARY)
-        img = img[:, :, None]
-        return img
 
     def get_ref_index(self, neighbor_ids, length):
         """

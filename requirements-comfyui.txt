@@ -1,2 +1,0 @@
-opencv-python>=4.11
-onnxruntime>=1.20

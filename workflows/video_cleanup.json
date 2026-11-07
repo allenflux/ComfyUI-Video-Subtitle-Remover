@@ -15,7 +15,7 @@
         {"name": "VIDEO", "type": "VIDEO", "links": [1]}
       ],
       "properties": {"Node name for S&R": "LoadVideo"},
-      "widgets_values": ["test.mp4", "image"]
+      "widgets_values": ["", "image"]
     },
     {
       "id": 2,
