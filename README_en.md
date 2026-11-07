@@ -35,4 +35,26 @@ Rectangle coordinates start at the upper-left corner. Set `x`, `y`, `width`, and
 
 Drag the [example workflow](workflows/video_cleanup.json) into ComfyUI, then upload and select your own clip in `Load Video`. The example removes subtitles by default. Disable bypass on the watermark node to remove watermarks in the same run. `Create Video` receives the source audio and frame rate, and `Save Video` writes the result. The workflow loads the video as a batch of images, so start with a short clip to check the selected regions.
 
+## Deploy to a ComfyUI cluster
+
+- Pin the same repository commit and ComfyUI version on every worker eligible to run the workflow. Install the node and its dependencies in the worker image, or mount the same checkout under `custom_nodes` and install its Python dependencies on every worker. After restart, check for `VSRRemoveSubtitles` and `VSRRemoveWatermark` at `GET /object_info`.
+- Make the source video available in the executing worker's ComfyUI input directory. Use a shared volume or stage the file on the worker before submission. The workflow extracts audio from that same video. Configure persistent output storage or collect the video from the worker before the Pod is replaced. With shared output storage, assign a unique `SaveVideo.inputs.filename_prefix` to each job.
+- Send submission and history requests to the same ComfyUI worker because the queue and history belong to that instance. For read-only node mounts, assemble the LaMa model in the image before deployment or give the model directory writable storage.
+
+The nodes load in the existing ComfyUI process and run through its built-in workflow queue.
+
+## Submit a workflow through the API
+
+1. Open `workflows/video_cleanup.json` in the editor, select a source video, and choose **File → Export (API)**. Save the export as `workflow_api.json`. For each job, set the `LoadVideo` node's `inputs.file` to the video available on the worker.
+2. Wrap the exported node map in a `prompt` field and submit it to the ComfyUI worker. Replace the URL below with the worker's endpoint.
+
+   ```sh
+   COMFYUI_URL=http://127.0.0.1:8188
+   python -c 'import json, sys; print(json.dumps({"prompt": json.load(sys.stdin)}))' \
+     < workflow_api.json | curl -fsS "$COMFYUI_URL/prompt" \
+     -H 'Content-Type: application/json' --data-binary @-
+   ```
+
+3. Use the returned `prompt_id` with `GET /history/{prompt_id}` to check completion. Use the `SaveVideo` output's `filename`, `subfolder`, and `type` with `GET /view` to download the file, or retrieve it from the output volume. [ComfyUI server routes](https://docs.comfy.org/development/comfyui-server/comms_routes)
+
 Based on [Video Subtitle Remover](https://github.com/YaoFANGUK/video-subtitle-remover) and distributed under the [Apache 2.0 license](LICENSE).
