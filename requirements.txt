@@ -14,7 +14,7 @@ scikit-learn==1.6.1
 pandas==2.2.3
 webdataset==0.2.111
 numpy==2.2.5
-protobuf==6.30.2
+protobuf==6.33.5
 av==14.3.0
 einops==0.8.1
 paddleocr==2.10.0
