@@ -6,22 +6,35 @@
 
 ## 安装到 ComfyUI Pod
 
-在 Pod 终端进入 ComfyUI 根目录，用启动 ComfyUI 的同一个 Python 环境运行以下命令。
+在 Pod 终端进入 ComfyUI 根目录，用启动 ComfyUI 的同一个 Python 环境克隆节点。
 
 ```sh
 git clone --depth 1 https://github.com/allenflux/ComfyUI-Video-Subtitle-Remover.git custom_nodes/video-subtitle-remover
+```
+
+如果镜像尚未安装 OpenCV 或 ONNX Runtime，按 `requirements.txt` 安装缺少的依赖。两个都缺时可以运行以下命令。
+
+```sh
 python -m pip install -r custom_nodes/video-subtitle-remover/requirements.txt
 ```
 
 重启 ComfyUI 服务后，搜索 `VSR Remove Subtitles` 或 `VSR Remove Watermark`。可参考 [ComfyUI 官方安装说明](https://docs.comfy.org/installation/install_custom_node)。
 
-若 Pod 已有可导入的 `cv2` 或 `onnxruntime`，按 `requirements.txt` 只安装缺少的包，以免同一环境混装不同版本的 OpenCV 或 ONNX Runtime。
-
-如果已克隆过此仓库，在 ComfyUI 根目录运行以下命令，再重启服务。
+如果已克隆过此仓库，在 ComfyUI 根目录运行以下命令，补齐缺少的依赖后重启服务。
 
 ```sh
 git -C custom_nodes/video-subtitle-remover pull --ff-only
-python -m pip install -r custom_nodes/video-subtitle-remover/requirements.txt
+```
+
+### 与 InsightFace 共用 Python 环境
+
+InsightFace 2.0 的依赖声明要求 `opencv-python`。共用环境时，本插件和 InsightFace 都可以使用 `opencv-python` 提供的 `cv2`，并按需单独安装 `onnxruntime>=1.20`。OpenCV 的多个发行包共用同一个 `cv2` 命名空间，每个环境只保留一个。[InsightFace 依赖](https://pypi.org/pypi/insightface/2.0/json) · [OpenCV 安装说明](https://pypi.org/project/opencv-python-headless/)
+
+如果环境已经装了 `opencv-python-headless`，先用 `python -m pip show opencv-python-headless` 查看 `Version` 和 `Required-by`。如果其他节点没有明确依赖 headless 包，可先卸载它，再安装同版本的 `opencv-python`。运行下面的命令验证两个库和依赖声明。
+
+```sh
+python -c 'import cv2, onnxruntime; print(cv2.__version__, onnxruntime.__version__)'
+python -m pip check
 ```
 
 ## 节点与工作流

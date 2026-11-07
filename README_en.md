@@ -10,18 +10,31 @@ In the Pod terminal, change to the ComfyUI root directory. Use the same Python e
 
 ```sh
 git clone --depth 1 https://github.com/allenflux/ComfyUI-Video-Subtitle-Remover.git custom_nodes/video-subtitle-remover
+```
+
+Install only the missing dependencies listed in `requirements.txt`. If neither OpenCV nor ONNX Runtime is installed, run the following command.
+
+```sh
 python -m pip install -r custom_nodes/video-subtitle-remover/requirements.txt
 ```
 
 Restart the ComfyUI service and search for `VSR Remove Subtitles` or `VSR Remove Watermark`. See the [ComfyUI installation guide](https://docs.comfy.org/installation/install_custom_node) for environment-specific instructions.
 
-If the Pod can already import `cv2` or `onnxruntime`, install only the missing package from `requirements.txt` to avoid mixing OpenCV or ONNX Runtime variants in the same environment.
-
-To update an existing checkout, run these commands from the ComfyUI root directory and restart the service.
+To update an existing checkout, run the following command from the ComfyUI root directory, install any missing dependencies, and restart the service.
 
 ```sh
 git -C custom_nodes/video-subtitle-remover pull --ff-only
-python -m pip install -r custom_nodes/video-subtitle-remover/requirements.txt
+```
+
+### Share an environment with InsightFace
+
+InsightFace 2.0 declares a dependency on `opencv-python`. In a shared environment, use `opencv-python` to provide `cv2` for both extensions and install `onnxruntime>=1.20` separately if needed. Install one OpenCV distribution per environment because all variants share the `cv2` namespace. [InsightFace dependencies](https://pypi.org/pypi/insightface/2.0/json) · [OpenCV installation guide](https://pypi.org/project/opencv-python-headless/)
+
+If `opencv-python-headless` is already installed, inspect its `Version` and `Required-by` with `python -m pip show opencv-python-headless`. If no other extension explicitly requires the headless package, uninstall it and install the same version of `opencv-python`. Verify imports and declared dependencies with the following commands.
+
+```sh
+python -c 'import cv2, onnxruntime; print(cv2.__version__, onnxruntime.__version__)'
+python -m pip check
 ```
 
 ## Nodes and workflow
