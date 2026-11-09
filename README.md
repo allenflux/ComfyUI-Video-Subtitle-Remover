@@ -6,17 +6,25 @@
 
 ## 安装到 ComfyUI Pod
 
-在 Pod 终端进入 ComfyUI 根目录，用启动 ComfyUI 的同一个 Python 环境克隆节点，并把独立模型项目克隆到默认模型目录。
+在 Pod 终端进入 ComfyUI 根目录，用启动 ComfyUI 的同一个 Python 环境克隆节点，再用并行安装器下载独立模型项目的固定版本。安装器默认同时下载 8 个文件，会校验固定清单和每个模型文件；重复运行时会跳过校验通过的文件。
 
 ```sh
 git clone --depth 1 https://github.com/allenflux/ComfyUI-Video-Subtitle-Remover.git custom_nodes/video-subtitle-remover
+python custom_nodes/video-subtitle-remover/scripts/install_models.py
+```
+
+这种方式可避免某些 Pod 到 GitHub 的单连接速度很慢。也可以直接浅克隆[模型项目](https://github.com/allenflux/ComfyUI-Video-Subtitle-Remover-Models)：
+
+```sh
 git clone --depth 1 https://github.com/allenflux/ComfyUI-Video-Subtitle-Remover-Models.git /app/ComfyUI/models/video-subtitle-remover-models
 ```
 
-默认从 `/app/ComfyUI/models/video-subtitle-remover-models` 加载权重。如果模型项目安装在其他位置，请在启动 ComfyUI 前设置 `VSR_MODELS_DIR`，其值应为模型项目的根目录。
+默认从 `/app/ComfyUI/models/video-subtitle-remover-models` 加载权重。如果模型项目安装在其他位置，请在启动 ComfyUI 前设置 `VSR_MODELS_DIR`，其值应为模型项目的根目录；安装器也支持用 `--dest` 单独指定路径。`--dest` 的优先级高于环境变量。
 
 ```sh
 export VSR_MODELS_DIR=/path/to/video-subtitle-remover-models
+python custom_nodes/video-subtitle-remover/scripts/install_models.py
+# 或：python custom_nodes/video-subtitle-remover/scripts/install_models.py --dest /path/to/video-subtitle-remover-models
 ```
 
 如果镜像尚未安装 OpenCV 或 ONNX Runtime，按 `requirements.txt` 安装缺少的依赖。两个都缺时可以运行以下命令。
@@ -27,12 +35,14 @@ python -m pip install -r custom_nodes/video-subtitle-remover/requirements.txt
 
 重启 ComfyUI 服务后，搜索 `VSR Remove Subtitles` 或 `VSR Remove Watermark`。可参考 [ComfyUI 官方安装说明](https://docs.comfy.org/installation/install_custom_node)。
 
-如果已经安装过节点和模型项目，在 ComfyUI 根目录分别更新两者，补齐缺少的依赖后重启服务。使用 `VSR_MODELS_DIR` 时，请把第二条命令的路径替换为实际模型目录。
+如果使用并行安装器，在 ComfyUI 根目录更新节点后再次运行安装器即可同步并校验脚本固定的模型版本。补齐缺少的依赖后重启服务。
 
 ```sh
 git -C custom_nodes/video-subtitle-remover pull --ff-only
-git -C /app/ComfyUI/models/video-subtitle-remover-models pull --ff-only
+python custom_nodes/video-subtitle-remover/scripts/install_models.py
 ```
+
+如果模型目录是 Git checkout，则改用 `git -C /app/ComfyUI/models/video-subtitle-remover-models pull --ff-only` 更新；使用自定义路径时替换为实际目录。
 
 ### 与 InsightFace 共用 Python 环境
 

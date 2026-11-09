@@ -6,17 +6,25 @@ Remove hardcoded subtitles and watermarks in ComfyUI. Choose LaMa for frame-by-f
 
 ## Install in a ComfyUI Pod
 
-In the Pod terminal, change to the ComfyUI root directory. Use the same Python environment that runs ComfyUI, then clone the separate model project into the default model directory.
+In the Pod terminal, change to the ComfyUI root directory. Use the same Python environment that runs ComfyUI, clone the node project, then use the parallel installer to fetch a pinned snapshot of the separate model project. The installer downloads eight files concurrently, verifies the pinned manifest and every model checksum, and skips valid files when run again.
 
 ```sh
 git clone --depth 1 https://github.com/allenflux/ComfyUI-Video-Subtitle-Remover.git custom_nodes/video-subtitle-remover
+python custom_nodes/video-subtitle-remover/scripts/install_models.py
+```
+
+This avoids slow single-connection Git transfers on some Pods. A direct shallow clone of the [model project](https://github.com/allenflux/ComfyUI-Video-Subtitle-Remover-Models) remains available:
+
+```sh
 git clone --depth 1 https://github.com/allenflux/ComfyUI-Video-Subtitle-Remover-Models.git /app/ComfyUI/models/video-subtitle-remover-models
 ```
 
-Weights are loaded from `/app/ComfyUI/models/video-subtitle-remover-models` by default. If the model project is installed elsewhere, set `VSR_MODELS_DIR` to its root directory before starting ComfyUI.
+Weights are loaded from `/app/ComfyUI/models/video-subtitle-remover-models` by default. If the model project is installed elsewhere, set `VSR_MODELS_DIR` to its root directory before starting ComfyUI, or pass `--dest` to the installer. `--dest` takes precedence over the environment variable.
 
 ```sh
 export VSR_MODELS_DIR=/path/to/video-subtitle-remover-models
+python custom_nodes/video-subtitle-remover/scripts/install_models.py
+# Or: python custom_nodes/video-subtitle-remover/scripts/install_models.py --dest /path/to/video-subtitle-remover-models
 ```
 
 Install only the missing dependencies listed in `requirements.txt`. If neither OpenCV nor ONNX Runtime is installed, run the following command.
@@ -27,12 +35,14 @@ python -m pip install -r custom_nodes/video-subtitle-remover/requirements.txt
 
 Restart the ComfyUI service and search for `VSR Remove Subtitles` or `VSR Remove Watermark`. See the [ComfyUI installation guide](https://docs.comfy.org/installation/install_custom_node) for environment-specific instructions.
 
-To update an existing installation, update both the node and model projects from the ComfyUI root directory, install any missing dependencies, and restart the service. When using `VSR_MODELS_DIR`, replace the path in the second command with the actual model directory.
+When using the parallel installer, update the node project and run the installer again to synchronize and verify the model revision pinned by the script. Install any missing dependencies, then restart the service.
 
 ```sh
 git -C custom_nodes/video-subtitle-remover pull --ff-only
-git -C /app/ComfyUI/models/video-subtitle-remover-models pull --ff-only
+python custom_nodes/video-subtitle-remover/scripts/install_models.py
 ```
+
+If the model directory is a Git checkout, update it with `git -C /app/ComfyUI/models/video-subtitle-remover-models pull --ff-only` instead. Replace that path when using a custom model directory.
 
 ### Share an environment with InsightFace
 
