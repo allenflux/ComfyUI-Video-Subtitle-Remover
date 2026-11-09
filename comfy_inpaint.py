@@ -9,16 +9,17 @@ import numpy as np
 import torch
 
 from .backend.inpaint.opencv_inpaint import OpenCVInpaint
+from .model_paths import MODELS_DIR_ENV, model_path, require_model_file
 
 
-MODELS = Path(__file__).resolve().parent / "backend" / "models"
 STTN_WINDOW = 16
 
 
 def _lama_model_path():
-    directory = MODELS / "big-lama"
+    directory = model_path("big-lama")
     model = directory / "big-lama.pt"
-    with (directory / "fs_manifest.csv").open(newline="", encoding="utf-8") as manifest:
+    manifest_path = require_model_file(directory / "fs_manifest.csv", "LaMa model manifest")
+    with manifest_path.open(newline="", encoding="utf-8") as manifest:
         parts = [(directory / row["filename"], int(row["filesize"])) for row in csv.DictReader(manifest)]
     if model.is_file() and model.stat().st_size == sum(size for _, size in parts):
         return model
@@ -29,7 +30,10 @@ def _lama_model_path():
             temporary_path = Path(merged.name)
             for part, size in parts:
                 if not part.is_file() or part.stat().st_size != size:
-                    raise FileNotFoundError(f"Missing or incomplete LaMa model part: {part}")
+                    raise FileNotFoundError(
+                        f"Missing or incomplete LaMa model part: {part}. "
+                        f"Set {MODELS_DIR_ENV} to the model repository directory."
+                    )
                 with part.open("rb") as stream:
                     shutil.copyfileobj(stream, merged)
         os.replace(temporary_path, model)
@@ -53,7 +57,9 @@ def _load_inpainter(method):
     if method == "STTN":
         from .backend.inpaint.sttn_det_inpaint import STTNDetInpaint
 
-        path = MODELS / "sttn-det" / "sttn.pth"
+        path = require_model_file(
+            model_path("sttn-det", "sttn.pth"), "STTN model weights"
+        )
         return STTNDetInpaint(device, path)
     raise ValueError(f"Unknown VSR inpainting method: {method}")
 

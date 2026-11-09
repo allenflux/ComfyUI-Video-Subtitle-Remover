@@ -1,11 +1,10 @@
 from functools import cache
-from pathlib import Path
 
 import cv2
 import numpy as np
 
+from .model_paths import model_path, require_model_file
 
-MODEL_PATH = Path(__file__).resolve().parent / "backend/models/V4/ch_det_fast/inference.onnx"
 MEAN = np.array([0.485, 0.456, 0.406], dtype=np.float32)
 STD = np.array([0.229, 0.224, 0.225], dtype=np.float32)
 
@@ -17,12 +16,14 @@ def _detector_session():
     except ImportError as error:
         raise RuntimeError("Automatic text detection requires onnxruntime in the ComfyUI environment.") from error
 
-    if not MODEL_PATH.is_file():
-        raise FileNotFoundError(f"Missing PP-OCRv4 text detector weights: {MODEL_PATH}")
+    path = require_model_file(
+        model_path("V4", "ch_det_fast", "inference.onnx"),
+        "PP-OCRv4 text detector weights",
+    )
     options = onnxruntime.SessionOptions()
     options.intra_op_num_threads = 2
     session = onnxruntime.InferenceSession(
-        str(MODEL_PATH), sess_options=options, providers=["CPUExecutionProvider"]
+        str(path), sess_options=options, providers=["CPUExecutionProvider"]
     )
     return session, session.get_inputs()[0].name
 

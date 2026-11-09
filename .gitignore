@@ -6,5 +6,4 @@ venv/
 .idea/
 .vscode/
 .DS_Store
-/backend/models/big-lama/big-lama.pt
-/backend/models/big-lama/.big-lama-*.tmp
+/backend/models/

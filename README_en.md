@@ -2,14 +2,21 @@
 
 [简体中文](README.md) | English
 
-Remove hardcoded subtitles and watermarks in ComfyUI. Choose LaMa for frame-by-frame inpainting, STTN for inpainting with neighboring frames, or OpenCV for quick cleanup of small regions. Model weights are bundled.
+Remove hardcoded subtitles and watermarks in ComfyUI. Choose LaMa for frame-by-frame inpainting, STTN for inpainting with neighboring frames, or OpenCV for quick cleanup of small regions. Model weights are provided by the separate `video-subtitle-remover-models` project.
 
 ## Install in a ComfyUI Pod
 
-In the Pod terminal, change to the ComfyUI root directory. Use the same Python environment that runs ComfyUI.
+In the Pod terminal, change to the ComfyUI root directory. Use the same Python environment that runs ComfyUI, then clone the separate model project into the default model directory. Replace `<models-repository-url>` with the model project's actual URL after that repository has been created.
 
 ```sh
 git clone --depth 1 https://github.com/allenflux/ComfyUI-Video-Subtitle-Remover.git custom_nodes/video-subtitle-remover
+git clone --depth 1 <models-repository-url> /app/ComfyUI/models/video-subtitle-remover-models
+```
+
+Weights are loaded from `/app/ComfyUI/models/video-subtitle-remover-models` by default. If the model project is installed elsewhere, set `VSR_MODELS_DIR` to its root directory before starting ComfyUI.
+
+```sh
+export VSR_MODELS_DIR=/path/to/video-subtitle-remover-models
 ```
 
 Install only the missing dependencies listed in `requirements.txt`. If neither OpenCV nor ONNX Runtime is installed, run the following command.
@@ -20,10 +27,11 @@ python -m pip install -r custom_nodes/video-subtitle-remover/requirements.txt
 
 Restart the ComfyUI service and search for `VSR Remove Subtitles` or `VSR Remove Watermark`. See the [ComfyUI installation guide](https://docs.comfy.org/installation/install_custom_node) for environment-specific instructions.
 
-To update an existing checkout, run the following command from the ComfyUI root directory, install any missing dependencies, and restart the service.
+To update an existing installation, update both the node and model projects from the ComfyUI root directory, install any missing dependencies, and restart the service. When using `VSR_MODELS_DIR`, replace the path in the second command with the actual model directory.
 
 ```sh
 git -C custom_nodes/video-subtitle-remover pull --ff-only
+git -C /app/ComfyUI/models/video-subtitle-remover-models pull --ff-only
 ```
 
 ### Share an environment with InsightFace
@@ -44,15 +52,15 @@ python -m pip check
 | `VSR Remove Subtitles` | Takes images or video frames. By default it detects subtitles in the bottom quarter and returns restored frames and a subtitle mask. Adjust the search region and mask padding or choose `rectangle` to restore the entire selection. |
 | `VSR Remove Watermark` | Takes images or video frames. Select a rectangle or connect a frame-sized `MASK`. Supply one shared mask or one per frame. A connected mask takes precedence over the rectangle. |
 
-Rectangle coordinates start at the upper-left corner. Set `x`, `y`, `width`, and `height` as proportions of the frame dimensions. On first use, LaMa assembles its model parts in the model directory, which needs to be writable.
+Rectangle coordinates start at the upper-left corner. Set `x`, `y`, `width`, and `height` as proportions of the frame dimensions. On first use, LaMa assembles its model parts in the separate model project's `big-lama` directory, so the ComfyUI process needs write access to the model directory.
 
 Drag the [example workflow](workflows/video_cleanup.json) into ComfyUI, then upload and select your own clip in `Load Video`. The example removes subtitles by default. Disable bypass on the watermark node to remove watermarks in the same run. `Create Video` receives the source audio and frame rate, and `Save Video` writes the result. The workflow loads the video as a batch of images, so start with a short clip to check the selected regions.
 
 ## Deploy to a ComfyUI cluster
 
-- Pin the same repository commit and ComfyUI version on every worker eligible to run the workflow. Install the node and its dependencies in the worker image, or mount the same checkout under `custom_nodes` and install its Python dependencies on every worker. After restart, check for `VSRRemoveSubtitles` and `VSRRemoveWatermark` at `GET /object_info`.
+- Pin the same node-project commit, `video-subtitle-remover-models` commit, and ComfyUI version on every worker eligible to run the workflow. Install the node, its dependencies, and the model project in the worker image, or mount the same checkouts on every worker. Place the model project at `/app/ComfyUI/models/video-subtitle-remover-models`, or set the same `VSR_MODELS_DIR` to its mounted location. After restart, check for `VSRRemoveSubtitles` and `VSRRemoveWatermark` at `GET /object_info`.
 - Make the source video available in the executing worker's ComfyUI input directory. Use a shared volume or stage the file on the worker before submission. The workflow extracts audio from that same video. Configure persistent output storage or collect the video from the worker before the Pod is replaced. With shared output storage, assign a unique `SaveVideo.inputs.filename_prefix` to each job.
-- Send submission and history requests to the same ComfyUI worker because the queue and history belong to that instance. For read-only node mounts, assemble the LaMa model in the image before deployment or give the model directory writable storage.
+- Send submission and history requests to the same ComfyUI worker because the queue and history belong to that instance. For read-only model mounts, assemble the LaMa model in the image before deployment or give the model directory writable storage.
 
 The nodes load in the existing ComfyUI process and run through its built-in workflow queue.
 
