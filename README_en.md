@@ -6,11 +6,11 @@ Remove hardcoded subtitles and watermarks in ComfyUI. Choose LaMa for frame-by-f
 
 ## Install in a ComfyUI Pod
 
-In the Pod terminal, change to the ComfyUI root directory. Use the same Python environment that runs ComfyUI, then clone the separate model project into the default model directory. Replace `<models-repository-url>` with the model project's actual URL after that repository has been created.
+In the Pod terminal, change to the ComfyUI root directory. Use the same Python environment that runs ComfyUI, then clone the separate model project into the default model directory.
 
 ```sh
 git clone --depth 1 https://github.com/allenflux/ComfyUI-Video-Subtitle-Remover.git custom_nodes/video-subtitle-remover
-git clone --depth 1 <models-repository-url> /app/ComfyUI/models/video-subtitle-remover-models
+git clone --depth 1 https://github.com/allenflux/ComfyUI-Video-Subtitle-Remover-Models.git /app/ComfyUI/models/video-subtitle-remover-models
 ```
 
 Weights are loaded from `/app/ComfyUI/models/video-subtitle-remover-models` by default. If the model project is installed elsewhere, set `VSR_MODELS_DIR` to its root directory before starting ComfyUI.

@@ -6,11 +6,11 @@
 
 ## 安装到 ComfyUI Pod
 
-在 Pod 终端进入 ComfyUI 根目录，用启动 ComfyUI 的同一个 Python 环境克隆节点，并把独立模型项目克隆到默认模型目录。请将 `<models-repository-url>` 替换为模型项目创建后的实际地址。
+在 Pod 终端进入 ComfyUI 根目录，用启动 ComfyUI 的同一个 Python 环境克隆节点，并把独立模型项目克隆到默认模型目录。
 
 ```sh
 git clone --depth 1 https://github.com/allenflux/ComfyUI-Video-Subtitle-Remover.git custom_nodes/video-subtitle-remover
-git clone --depth 1 <models-repository-url> /app/ComfyUI/models/video-subtitle-remover-models
+git clone --depth 1 https://github.com/allenflux/ComfyUI-Video-Subtitle-Remover-Models.git /app/ComfyUI/models/video-subtitle-remover-models
 ```
 
 默认从 `/app/ComfyUI/models/video-subtitle-remover-models` 加载权重。如果模型项目安装在其他位置，请在启动 ComfyUI 前设置 `VSR_MODELS_DIR`，其值应为模型项目的根目录。
